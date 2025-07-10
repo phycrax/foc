@@ -21,8 +21,8 @@ impl PIController {
     }
 
     /// Update the PI controller, returning the new output value.
-    pub fn update(&mut self, measurement: I16F16, setpoint: I16F16, dt: I16F16) -> I16F16 {
-        let error = measurement - setpoint;
+    pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
+        let error = setpoint - measurement;
         self.k_p * error + self.integral.update(error, dt)
     }
 }
@@ -54,8 +54,8 @@ impl PIDController {
     }
 
     /// Update the PID controller, returning the new output value.
-    pub fn update(&mut self, measurement: I16F16, setpoint: I16F16, dt: I16F16) -> I16F16 {
-        let error = measurement - setpoint;
+    pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
+        let error = setpoint - measurement;
         self.k_p * error + self.integral.update(error, dt) + self.derivative.update(measurement, dt)
     }
 }
