@@ -22,8 +22,10 @@ impl PIController {
 
     /// Update the PI controller, returning the new output value.
     pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
-        let error = setpoint - measurement;
-        self.k_p * error + self.integral.update(error, dt)
+        let error = setpoint.saturating_sub(measurement);
+        self.k_p
+            .saturating_mul(error)
+            .saturating_add(self.integral.update(error, dt))
     }
 }
 
@@ -55,8 +57,11 @@ impl PIDController {
 
     /// Update the PID controller, returning the new output value.
     pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
-        let error = setpoint - measurement;
-        self.k_p * error + self.integral.update(error, dt) + self.derivative.update(measurement, dt)
+        let error = setpoint.saturating_sub(measurement);
+        self.k_p
+            .saturating_mul(error)
+            .saturating_add(self.integral.update(error, dt))
+            .saturating_add(self.derivative.update(measurement, dt))
     }
 }
 
@@ -67,7 +72,9 @@ struct IntegralComponent {
 
 impl IntegralComponent {
     fn update(&mut self, error: I16F16, dt: I16F16) -> I16F16 {
-        self.integral += self.k_i * error * dt;
+        self.integral = self
+            .integral
+            .saturating_add(self.k_i.saturating_mul(error.saturating_mul(dt)));
         self.integral
     }
 }
@@ -81,11 +88,11 @@ impl DerivativeComponent {
     fn update(&mut self, measurement: I16F16, dt: I16F16) -> I16F16 {
         let derivative = self
             .last_measurement
-            .map(|last| (measurement - last) / dt)
+            .map(|last| (measurement.saturating_sub(last)).saturating_div(dt))
             .unwrap_or(I16F16::ZERO);
 
         self.last_measurement = Some(measurement);
 
-        self.k_d * derivative
+        self.k_d.saturating_mul(derivative)
     }
 }
