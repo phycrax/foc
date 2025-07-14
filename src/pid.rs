@@ -29,7 +29,6 @@ impl PIController {
         let proportional = self.k_p.saturating_mul(error);
 
         proportional
-            .saturating_mul(error)
             .saturating_add(self.integral.update(error, dt)).clamp(-self.limit, self.limit)
     }
 }
