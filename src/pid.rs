@@ -5,16 +5,19 @@ use fixed::types::I16F16;
 /// A fixed-point PI controller.
 pub struct PIController {
     k_p: I16F16,
+    limit: I16F16,
     integral: IntegralComponent,
 }
 
 impl PIController {
     /// Create a new PI controller with the given gains.
-    pub fn new(k_p: I16F16, k_i: I16F16) -> Self {
+    pub fn new(k_p: I16F16, k_i: I16F16, limit: I16F16) -> Self {
         Self {
             k_p,
+            limit,
             integral: IntegralComponent {
                 k_i,
+                limit,
                 integral: I16F16::ZERO,
             },
         }
@@ -23,9 +26,11 @@ impl PIController {
     /// Update the PI controller, returning the new output value.
     pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
         let error = setpoint.saturating_sub(measurement);
-        self.k_p
+        let proportional = self.k_p.saturating_mul(error);
+
+        proportional
             .saturating_mul(error)
-            .saturating_add(self.integral.update(error, dt))
+            .saturating_add(self.integral.update(error, dt)).clamp(-self.limit, self.limit)
     }
 }
 
@@ -35,17 +40,20 @@ impl PIController {
 /// setpoint changes.
 pub struct PIDController {
     k_p: I16F16,
+    limit: I16F16,
     integral: IntegralComponent,
     derivative: DerivativeComponent,
 }
 
 impl PIDController {
     /// Create a new PID controller with the given gains.
-    pub fn new(k_p: I16F16, k_i: I16F16, k_d: I16F16) -> Self {
+    pub fn new(k_p: I16F16, k_i: I16F16, k_d: I16F16, limit: I16F16) -> Self {
         Self {
             k_p,
+            limit,
             integral: IntegralComponent {
                 k_i,
+                limit,
                 integral: I16F16::ZERO,
             },
             derivative: DerivativeComponent {
@@ -58,23 +66,26 @@ impl PIDController {
     /// Update the PID controller, returning the new output value.
     pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
         let error = setpoint.saturating_sub(measurement);
-        self.k_p
-            .saturating_mul(error)
+        let proportional = self.k_p.saturating_mul(error);
+
+        proportional
             .saturating_add(self.integral.update(error, dt))
-            .saturating_add(self.derivative.update(measurement, dt))
+            .saturating_add(self.derivative.update(measurement, dt)).clamp(-self.limit, self.limit)
     }
 }
 
 struct IntegralComponent {
     k_i: I16F16,
     integral: I16F16,
+    limit: I16F16,
 }
 
 impl IntegralComponent {
     fn update(&mut self, error: I16F16, dt: I16F16) -> I16F16 {
         self.integral = self
             .integral
-            .saturating_add(self.k_i.saturating_mul(error.saturating_mul(dt)));
+            .saturating_add(self.k_i.saturating_mul(error.saturating_mul(dt))).clamp(-self.limit, self.limit);
+
         self.integral
     }
 }
