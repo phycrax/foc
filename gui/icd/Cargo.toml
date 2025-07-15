@@ -1,8 +1,0 @@
-[package]
-name = "icd"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-postcard = { version = "1.0.8", default-features = false }
-serde = { version = "1.0.203", default-features = false, features = ["derive"] }

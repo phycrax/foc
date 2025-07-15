@@ -1,6 +1,0 @@
-/* Linker script for the STM32G474VETx */
-MEMORY
-{
-  FLASH : ORIGIN = 0x8000000, LENGTH = 128K 
-  RAM : ORIGIN = 0x20000000, LENGTH = 32K
-}

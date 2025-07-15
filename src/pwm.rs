@@ -4,8 +4,6 @@
 //! The resulting waveforms of the PWM generation methods are shown below.
 //! ![PWM Methods](https://raw.githubusercontent.com/calebfletcher/foc/main/docs/pwm_methods.png)
 
-use fixed::types::I16F16;
-
 use crate::park_clarke::TwoPhaseReferenceFrame;
 
 pub trait Modulation {
@@ -15,7 +13,7 @@ pub trait Modulation {
     /// maximum value inclusive.
     fn as_compare_value(value: TwoPhaseReferenceFrame, max: u16) -> [u16; 3] {
         Self::modulate(value).map(|val| {
-            (((val + I16F16::from_num(1)) * (max as i32 + 1)) / 2)
+            (((val + 1.0) * (max as i32 + 1)) / 2)
                 .round()
                 .saturating_to_num::<u16>()
                 .clamp(0, max)
