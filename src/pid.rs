@@ -1,6 +1,7 @@
 //! Floating-point PI and PID controllers.
 
 /// A floating-point PI controller.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PIController {
     k_p: f32,
     integral: IntegralComponent,
@@ -8,7 +9,7 @@ pub struct PIController {
 
 impl PIController {
     /// Create a new PI controller with the given gains.
-    pub fn new(k_p: f32, k_i: f32) -> Self {
+    pub const fn new(k_p: f32, k_i: f32) -> Self {
         Self {
             k_p,
             integral: IntegralComponent {
@@ -29,6 +30,7 @@ impl PIController {
 ///
 /// Uses the derivative-on-measurement technique to avoid derivative kicks on
 /// setpoint changes.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PIDController {
     k_p: f32,
     integral: IntegralComponent,
@@ -37,7 +39,7 @@ pub struct PIDController {
 
 impl PIDController {
     /// Create a new PID controller with the given gains.
-    pub fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
+    pub const fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
         Self {
             k_p,
             integral: IntegralComponent {
@@ -58,6 +60,7 @@ impl PIDController {
     }
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct IntegralComponent {
     k_i: f32,
     integral: f32,
@@ -70,6 +73,7 @@ impl IntegralComponent {
     }
 }
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct DerivativeComponent {
     k_d: f32,
     last_measurement: Option<f32>,

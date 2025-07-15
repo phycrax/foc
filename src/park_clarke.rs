@@ -7,6 +7,7 @@ use crate::{FRAC_1_SQRT_3, SQRT_3};
 /// A value in a reference frame that moves with the electrical angle of the
 /// motor. The two axes are orthogonal.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct RotatingReferenceFrame {
     /// Direct axis component aligned with the rotor flux
     pub d: f32,
@@ -17,6 +18,7 @@ pub struct RotatingReferenceFrame {
 /// A value in a reference frame that is stationary. The two axes are
 /// orthogonal.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TwoPhaseReferenceFrame {
     /// Alpha component aligned with phase A
     pub alpha: f32,
@@ -27,6 +29,7 @@ pub struct TwoPhaseReferenceFrame {
 /// A three-phase value in a stationary reference frame. The values do not
 /// necessarily sum to 0.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ThreePhaseReferenceFrame {
     /// Phase A component
     pub a: f32,
@@ -39,6 +42,7 @@ pub struct ThreePhaseReferenceFrame {
 /// A three-phase value in a stationary reference frame, where the three values
 /// sum to 0. As such, the third value is not given.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ThreePhaseBalancedReferenceFrame {
     /// Phase A component
     pub a: f32,
