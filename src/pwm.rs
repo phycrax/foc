@@ -2,22 +2,23 @@
 //! reference frame to a value suitable to be used for PWM generation.
 //!
 //! The resulting waveforms of the PWM generation methods are shown below.
-//! ![PWM Methods](https://raw.githubusercontent.com/calebfletcher/foc/main/docs/pwm_methods.png)
+//! ![PWM Methods](https://raw.githubusercontent.com/phycrax/foc/main/docs/pwm_methods.png)
 
-use crate::park_clarke::TwoPhaseReferenceFrame;
+use crate::{park_clarke::TwoPhaseReferenceFrame, SQRT_3};
 
+/// Trait to generalize converting a value from a two-phase stationary orthogonal
+/// reference frame to a value suitable to be used for PWM generation.
 pub trait Modulation {
-    fn modulate(value: TwoPhaseReferenceFrame) -> [I16F16; 3];
+    /// Generate PWM values based on a specific implementation.
+    ///
+    /// Returns a value between -1 and 1 for each channel.
+    fn modulate(value: TwoPhaseReferenceFrame) -> [f32; 3];
 
     /// Module the value, returning the result as a value between 0 and the specified
     /// maximum value inclusive.
     fn as_compare_value(value: TwoPhaseReferenceFrame, max: u16) -> [u16; 3] {
-        Self::modulate(value).map(|val| {
-            (((val + 1.0) * (max as i32 + 1)) / 2)
-                .round()
-                .saturating_to_num::<u16>()
-                .clamp(0, max)
-        })
+        Self::modulate(value)
+            .map(|val| (((val + 1.0) * (max as f32 + 1.0)) / 2.0).clamp(0.0, max as f32) as u16)
     }
 }
 
@@ -31,16 +32,20 @@ pub trait Modulation {
 pub struct SpaceVector;
 
 impl Modulation for SpaceVector {
-    fn modulate(value: TwoPhaseReferenceFrame) -> [I16F16; 3] {
+    fn modulate(value: TwoPhaseReferenceFrame) -> [f32; 3] {
         // Convert alpha/beta to x/y/z
-        let sqrt_3_alpha = I16F16::SQRT_3 * value.alpha;
+        let sqrt_3_alpha = SQRT_3 * value.alpha;
         let beta = value.beta;
         let x = beta;
-        let y = (beta + sqrt_3_alpha) / 2;
-        let z = (beta - sqrt_3_alpha) / 2;
+        let y = (beta + sqrt_3_alpha) / 2.0;
+        let z = (beta - sqrt_3_alpha) / 2.0;
 
         // Calculate which sector the value falls in
-        let sector: u8 = match (x.is_positive(), y.is_positive(), z.is_positive()) {
+        let sector: u8 = match (
+            x.is_sign_positive(),
+            y.is_sign_positive(),
+            z.is_sign_positive(),
+        ) {
             (true, true, false) => 1,
             (_, true, true) => 2,
             (true, false, true) => 3,
@@ -83,7 +88,7 @@ impl Modulation for SpaceVector {
 pub struct Sinusoidal;
 
 impl Modulation for Sinusoidal {
-    fn modulate(value: TwoPhaseReferenceFrame) -> [I16F16; 3] {
+    fn modulate(value: TwoPhaseReferenceFrame) -> [f32; 3] {
         let voltages = crate::park_clarke::inverse_clarke(value);
 
         [voltages.a, voltages.b, voltages.c]
@@ -99,13 +104,13 @@ impl Modulation for Sinusoidal {
 pub struct Trapezoidal;
 
 impl Modulation for Trapezoidal {
-    fn modulate(value: TwoPhaseReferenceFrame) -> [I16F16; 3] {
+    fn modulate(value: TwoPhaseReferenceFrame) -> [f32; 3] {
         let voltages = crate::park_clarke::inverse_clarke(value);
 
         [
-            (voltages.a * 2).round_to_zero().signum(),
-            (voltages.b * 2).round_to_zero().signum(),
-            (voltages.c * 2).round_to_zero().signum(),
+            (voltages.a * 2.0).signum(),
+            (voltages.b * 2.0).signum(),
+            (voltages.c * 2.0).signum(),
         ]
     }
 }
@@ -116,7 +121,7 @@ impl Modulation for Trapezoidal {
 pub struct Square;
 
 impl Modulation for Square {
-    fn modulate(value: TwoPhaseReferenceFrame) -> [I16F16; 3] {
+    fn modulate(value: TwoPhaseReferenceFrame) -> [f32; 3] {
         let voltages = crate::park_clarke::inverse_clarke(value);
 
         [
