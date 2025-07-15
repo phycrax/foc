@@ -6,52 +6,36 @@
 /// setpoint changes.
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PIDController {
-    p: Option<ProportionalComponent>,
-    i: Option<IntegralComponent>,
-    d: Option<DerivativeComponent>,
+    p: ProportionalComponent,
+    i: IntegralComponent,
+    d: DerivativeComponent,
 }
 
 impl PIDController {
     /// Create a new PID controller with the given gains.
     pub const fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
-        let proportional = if k_p != 0.0 {
-            Some(ProportionalComponent { gain: k_p })
-        } else {
-            None
+        let p = ProportionalComponent { gain: k_p };
+
+        let i = IntegralComponent {
+            gain: k_i,
+            integral: 0.0,
         };
 
-        let integral = if k_i != 0.0 {
-            Some(IntegralComponent {
-                gain: k_i,
-                integral: 0.0,
-            })
-        } else {
-            None
+        let d = DerivativeComponent {
+            gain: k_d,
+            last_measurement: None,
         };
 
-        let derivative = if k_d != 0.0 {
-            Some(DerivativeComponent {
-                gain: k_d,
-                last_measurement: None,
-            })
-        } else {
-            None
-        };
-
-        Self {
-            p: proportional,
-            i: integral,
-            d: derivative,
-        }
+        Self { p, i, d }
     }
 
     /// Update the PID controller, returning the new output value.
     pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
         let error = setpoint - measurement;
 
-        let p = self.p.as_mut().map_or(0.0, |p| p.update(error));
-        let i = self.i.as_mut().map_or(0.0, |p| p.update(error, dt));
-        let d = self.d.as_mut().map_or(0.0, |p| p.update(measurement, dt));
+        let p = self.p.update(error);
+        let i = self.i.update(error, dt);
+        let d = self.d.update(measurement, dt);
 
         p + i + d
     }
