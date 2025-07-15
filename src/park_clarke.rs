@@ -114,10 +114,7 @@ mod tests {
 
     #[track_caller]
     fn clark_e_round_trip(a: f32, b: f32) {
-        let input = ThreePhaseBalancedReferenceFrame {
-            a,
-            b,
-        };
+        let input = ThreePhaseBalancedReferenceFrame { a, b };
         let two_phase = clarke(input.clone());
         let result = inverse_clarke(two_phase);
 

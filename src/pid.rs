@@ -12,10 +12,7 @@ impl PIController {
     pub const fn new(k_p: f32, k_i: f32) -> Self {
         Self {
             k_p,
-            integral: IntegralComponent {
-                k_i,
-                integral: 0.0,
-            },
+            integral: IntegralComponent { k_i, integral: 0.0 },
         }
     }
 
@@ -42,10 +39,7 @@ impl PIDController {
     pub const fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
         Self {
             k_p,
-            integral: IntegralComponent {
-                k_i,
-                integral: 0.0,
-            },
+            integral: IntegralComponent { k_i, integral: 0.0 },
             derivative: DerivativeComponent {
                 k_d,
                 last_measurement: None,
