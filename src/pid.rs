@@ -1,50 +1,48 @@
-//! Fixed-point PI and PID controllers.
+//! Floating-point PI and PID controllers.
 
-use fixed::types::I16F16;
-
-/// A fixed-point PI controller.
+/// A floating-point PI controller.
 pub struct PIController {
-    k_p: I16F16,
+    k_p: f32,
     integral: IntegralComponent,
 }
 
 impl PIController {
     /// Create a new PI controller with the given gains.
-    pub fn new(k_p: I16F16, k_i: I16F16) -> Self {
+    pub fn new(k_p: f32, k_i: f32) -> Self {
         Self {
             k_p,
             integral: IntegralComponent {
                 k_i,
-                integral: I16F16::ZERO,
+                integral: 0.0,
             },
         }
     }
 
     /// Update the PI controller, returning the new output value.
-    pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
+    pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
         let error = setpoint - measurement;
         self.k_p * error + self.integral.update(error, dt)
     }
 }
 
-/// A fixed-point PID controller.
+/// A floating-point PID controller.
 ///
 /// Uses the derivative-on-measurement technique to avoid derivative kicks on
 /// setpoint changes.
 pub struct PIDController {
-    k_p: I16F16,
+    k_p: f32,
     integral: IntegralComponent,
     derivative: DerivativeComponent,
 }
 
 impl PIDController {
     /// Create a new PID controller with the given gains.
-    pub fn new(k_p: I16F16, k_i: I16F16, k_d: I16F16) -> Self {
+    pub fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
         Self {
             k_p,
             integral: IntegralComponent {
                 k_i,
-                integral: I16F16::ZERO,
+                integral: 0.0,
             },
             derivative: DerivativeComponent {
                 k_d,
@@ -54,35 +52,35 @@ impl PIDController {
     }
 
     /// Update the PID controller, returning the new output value.
-    pub fn update(&mut self, setpoint: I16F16, measurement: I16F16, dt: I16F16) -> I16F16 {
+    pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
         let error = setpoint - measurement;
         self.k_p * error + self.integral.update(error, dt) + self.derivative.update(measurement, dt)
     }
 }
 
 struct IntegralComponent {
-    k_i: I16F16,
-    integral: I16F16,
+    k_i: f32,
+    integral: f32,
 }
 
 impl IntegralComponent {
-    fn update(&mut self, error: I16F16, dt: I16F16) -> I16F16 {
+    fn update(&mut self, error: f32, dt: f32) -> f32 {
         self.integral += self.k_i * error * dt;
         self.integral
     }
 }
 
 struct DerivativeComponent {
-    k_d: I16F16,
-    last_measurement: Option<I16F16>,
+    k_d: f32,
+    last_measurement: Option<f32>,
 }
 
 impl DerivativeComponent {
-    fn update(&mut self, measurement: I16F16, dt: I16F16) -> I16F16 {
+    fn update(&mut self, measurement: f32, dt: f32) -> f32 {
         let derivative = self
             .last_measurement
             .map(|last| (measurement - last) / dt)
-            .unwrap_or(I16F16::ZERO);
+            .unwrap_or(0.0);
 
         self.last_measurement = Some(measurement);
 
