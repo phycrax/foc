@@ -4,39 +4,37 @@
 
 use crate::{FRAC_1_SQRT_3, SQRT_3};
 
-use fixed::types::I16F16;
-
 /// A value in a reference frame that moves with the electrical angle of the
 /// motor. The two axes are orthogonal.
 #[derive(Debug, Clone)]
 pub struct RotatingReferenceFrame {
-    pub d: I16F16,
-    pub q: I16F16,
+    pub d: f32,
+    pub q: f32,
 }
 
 /// A value in a reference frame that is stationary. The two axes are
 /// orthogonal.
 #[derive(Debug, Clone)]
 pub struct TwoPhaseReferenceFrame {
-    pub alpha: I16F16,
-    pub beta: I16F16,
+    pub alpha: f32,
+    pub beta: f32,
 }
 
 /// A three-phase value in a stationary reference frame. The values do not
 /// necessarily sum to 0.
 #[derive(Debug, Clone)]
 pub struct ThreePhaseReferenceFrame {
-    pub a: I16F16,
-    pub b: I16F16,
-    pub c: I16F16,
+    pub a: f32,
+    pub b: f32,
+    pub c: f32,
 }
 
 /// A three-phase value in a stationary reference frame, where the three values
 /// sum to 0. As such, the third value is not given.
 #[derive(Debug, Clone)]
 pub struct ThreePhaseBalancedReferenceFrame {
-    pub a: I16F16,
-    pub b: I16F16,
+    pub a: f32,
+    pub b: f32,
 }
 
 /// Clarke transform
@@ -47,7 +45,7 @@ pub fn clarke(inputs: ThreePhaseBalancedReferenceFrame) -> TwoPhaseReferenceFram
         // Eq3
         alpha: inputs.a,
         // Eq4
-        beta: FRAC_1_SQRT_3 * (inputs.a + 2 * inputs.b),
+        beta: FRAC_1_SQRT_3 * (inputs.a + 2.0 * inputs.b),
     }
 }
 
@@ -59,9 +57,9 @@ pub fn inverse_clarke(inputs: TwoPhaseReferenceFrame) -> ThreePhaseReferenceFram
         // Eq5
         a: inputs.alpha,
         // Eq6
-        b: (-inputs.alpha + SQRT_3 * inputs.beta) / 2,
+        b: (-inputs.alpha + SQRT_3 * inputs.beta) / 2.0,
         // Eq7
-        c: (-inputs.alpha - SQRT_3 * inputs.beta) / 2,
+        c: (-inputs.alpha - SQRT_3 * inputs.beta) / 2.0,
     }
 }
 
@@ -69,8 +67,8 @@ pub fn inverse_clarke(inputs: TwoPhaseReferenceFrame) -> ThreePhaseReferenceFram
 ///
 /// Implements equations 8 and 9 from the Microsemi guide.
 pub fn park(
-    cos_angle: I16F16,
-    sin_angle: I16F16,
+    cos_angle: f32,
+    sin_angle: f32,
     inputs: TwoPhaseReferenceFrame,
 ) -> RotatingReferenceFrame {
     RotatingReferenceFrame {
@@ -85,8 +83,8 @@ pub fn park(
 ///
 /// Implements equations 10 and 11 from the Microsemi guide.
 pub fn inverse_park(
-    cos_angle: I16F16,
-    sin_angle: I16F16,
+    cos_angle: f32,
+    sin_angle: f32,
     inputs: RotatingReferenceFrame,
 ) -> TwoPhaseReferenceFrame {
     TwoPhaseReferenceFrame {
@@ -104,17 +102,14 @@ mod tests {
     #[track_caller]
     fn clark_e_round_trip(a: f32, b: f32) {
         let input = ThreePhaseBalancedReferenceFrame {
-            a: I16F16::from_num(a),
-            b: I16F16::from_num(b),
+            a,
+            b,
         };
         let two_phase = clarke(input.clone());
-        dbg!(&two_phase);
         let result = inverse_clarke(two_phase);
 
-        dbg!(&result);
-
-        assert!(result.a.abs_diff(input.a) < 0.0001);
-        assert!(result.b.abs_diff(input.b) < 0.0001);
+        assert!((result.a - input.a).abs() < 0.0001);
+        assert!((result.b - input.b).abs() < 0.0001);
     }
 
     #[test]
@@ -133,20 +128,17 @@ mod tests {
 
     #[test]
     fn park_round_trip() {
-        let angle = I16F16::from_num(0.82);
-        let (sin_angle, cos_angle) = cordic::sin_cos(angle);
+        let angle = 0.82;
+        let (sin_angle, cos_angle) = libm::sincosf(angle);
 
         let input = TwoPhaseReferenceFrame {
-            alpha: I16F16::from_num(2),
-            beta: I16F16::from_num(3),
+            alpha: 2.0,
+            beta: 3.0,
         };
         let moving_reference = park(cos_angle, sin_angle, input.clone());
-        dbg!(&moving_reference);
         let result = inverse_park(cos_angle, sin_angle, moving_reference);
 
-        dbg!(&result);
-
-        assert!(result.alpha.abs_diff(input.alpha) < 0.001);
-        assert!(result.beta.abs_diff(input.beta) < 0.001);
+        assert!((result.alpha - input.alpha).abs() < 0.0001);
+        assert!((result.beta - input.beta).abs() < 0.0001);
     }
 }

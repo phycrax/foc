@@ -10,5 +10,5 @@ pub mod park_clarke;
 pub mod pid;
 pub mod pwm;
 
-const FRAC_1_SQRT_3: I16F16 = I16F16::lit("0.57735027");
-const SQRT_3: I16F16 = I16F16::lit("1.7320508");
+const FRAC_1_SQRT_3: f32 = 0.57735026_f32;
+const SQRT_3: f32 = 1.7320508_f32;
