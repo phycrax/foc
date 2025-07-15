@@ -8,7 +8,9 @@ use crate::{FRAC_1_SQRT_3, SQRT_3};
 /// motor. The two axes are orthogonal.
 #[derive(Debug, Clone)]
 pub struct RotatingReferenceFrame {
+    /// Direct axis component aligned with the rotor flux
     pub d: f32,
+    /// Quadrature axis component perpendicular to the rotor flux
     pub q: f32,
 }
 
@@ -16,7 +18,9 @@ pub struct RotatingReferenceFrame {
 /// orthogonal.
 #[derive(Debug, Clone)]
 pub struct TwoPhaseReferenceFrame {
+    /// Alpha component aligned with phase A
     pub alpha: f32,
+    /// Beta component perpendicular to alpha
     pub beta: f32,
 }
 
@@ -24,8 +28,11 @@ pub struct TwoPhaseReferenceFrame {
 /// necessarily sum to 0.
 #[derive(Debug, Clone)]
 pub struct ThreePhaseReferenceFrame {
+    /// Phase A component
     pub a: f32,
+    /// Phase B component
     pub b: f32,
+    /// Phase C component
     pub c: f32,
 }
 
@@ -33,7 +40,9 @@ pub struct ThreePhaseReferenceFrame {
 /// sum to 0. As such, the third value is not given.
 #[derive(Debug, Clone)]
 pub struct ThreePhaseBalancedReferenceFrame {
+    /// Phase A component
     pub a: f32,
+    /// Phase B component
     pub b: f32,
 }
 
