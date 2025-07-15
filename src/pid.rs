@@ -1,4 +1,57 @@
-//! Floating-point PID controller.
+//! Floating-point P, PI and PID controllers.
+
+/// A floating-point P controller.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct PController {
+    p: ProportionalComponent,
+}
+
+impl PController {
+    /// Create a new controller with the given gains.
+    pub const fn new(k_p: f32) -> Self {
+        let p = ProportionalComponent { gain: k_p };
+
+        Self { p }
+    }
+
+    /// Update the controller, returning the new output value.
+    pub fn update(&mut self, setpoint: f32, measurement: f32) -> f32 {
+        let error = setpoint - measurement;
+
+        self.p.update(error)
+    }
+}
+
+/// A floating-point PI controller.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct PIController {
+    p: ProportionalComponent,
+    i: IntegralComponent,
+}
+
+impl PIController {
+    /// Create a new controller with the given gains.
+    pub const fn new(k_p: f32, k_i: f32) -> Self {
+        let p = ProportionalComponent { gain: k_p };
+
+        let i = IntegralComponent {
+            gain: k_i,
+            integral: 0.0,
+        };
+
+        Self { p, i }
+    }
+
+    /// Update the controller, returning the new output value.
+    pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
+        let error = setpoint - measurement;
+
+        let p = self.p.update(error);
+        let i = self.i.update(error, dt);
+
+        p + i
+    }
+}
 
 /// A floating-point PID controller.
 ///
@@ -12,7 +65,7 @@ pub struct PIDController {
 }
 
 impl PIDController {
-    /// Create a new PID controller with the given gains.
+    /// Create a new controller with the given gains.
     pub const fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
         let p = ProportionalComponent { gain: k_p };
 
@@ -29,7 +82,7 @@ impl PIDController {
         Self { p, i, d }
     }
 
-    /// Update the PID controller, returning the new output value.
+    /// Update the controller, returning the new output value.
     pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
         let error = setpoint - measurement;
 
