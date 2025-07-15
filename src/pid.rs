@@ -1,27 +1,4 @@
-//! Floating-point PI and PID controllers.
-
-/// A floating-point PI controller.
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct PIController {
-    k_p: f32,
-    integral: IntegralComponent,
-}
-
-impl PIController {
-    /// Create a new PI controller with the given gains.
-    pub const fn new(k_p: f32, k_i: f32) -> Self {
-        Self {
-            k_p,
-            integral: IntegralComponent { k_i, integral: 0.0 },
-        }
-    }
-
-    /// Update the PI controller, returning the new output value.
-    pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
-        let error = setpoint - measurement;
-        self.k_p * error + self.integral.update(error, dt)
-    }
-}
+//! Floating-point PID controller.
 
 /// A floating-point PID controller.
 ///
@@ -29,47 +6,84 @@ impl PIController {
 /// setpoint changes.
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PIDController {
-    k_p: f32,
-    integral: IntegralComponent,
-    derivative: DerivativeComponent,
+    p: Option<ProportionalComponent>,
+    i: Option<IntegralComponent>,
+    d: Option<DerivativeComponent>,
 }
 
 impl PIDController {
     /// Create a new PID controller with the given gains.
     pub const fn new(k_p: f32, k_i: f32, k_d: f32) -> Self {
-        Self {
-            k_p,
-            integral: IntegralComponent { k_i, integral: 0.0 },
-            derivative: DerivativeComponent {
-                k_d,
+        let proportional = if k_p != 0.0 {
+            Some(ProportionalComponent { gain: k_p })
+        } else {
+            None
+        };
+
+        let integral = if k_i != 0.0 {
+            Some(IntegralComponent {
+                gain: k_i,
+                integral: 0.0,
+            })
+        } else {
+            None
+        };
+
+        let derivative = if k_d != 0.0 {
+            Some(DerivativeComponent {
+                gain: k_d,
                 last_measurement: None,
-            },
+            })
+        } else {
+            None
+        };
+
+        Self {
+            p: proportional,
+            i: integral,
+            d: derivative,
         }
     }
 
     /// Update the PID controller, returning the new output value.
     pub fn update(&mut self, setpoint: f32, measurement: f32, dt: f32) -> f32 {
         let error = setpoint - measurement;
-        self.k_p * error + self.integral.update(error, dt) + self.derivative.update(measurement, dt)
+
+        let p = self.p.as_mut().map_or(0.0, |p| p.update(error));
+        let i = self.i.as_mut().map_or(0.0, |p| p.update(error, dt));
+        let d = self.d.as_mut().map_or(0.0, |p| p.update(measurement, dt));
+
+        p + i + d
+    }
+}
+
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+struct ProportionalComponent {
+    gain: f32,
+}
+
+impl ProportionalComponent {
+    fn update(&mut self, error: f32) -> f32 {
+        self.gain * error
     }
 }
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct IntegralComponent {
-    k_i: f32,
+    gain: f32,
     integral: f32,
 }
 
 impl IntegralComponent {
     fn update(&mut self, error: f32, dt: f32) -> f32 {
-        self.integral += self.k_i * error * dt;
+        self.integral += self.gain * error * dt;
         self.integral
     }
 }
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct DerivativeComponent {
-    k_d: f32,
+    gain: f32,
     last_measurement: Option<f32>,
 }
 
@@ -78,10 +92,10 @@ impl DerivativeComponent {
         let derivative = self
             .last_measurement
             .map(|last| (measurement - last) / dt)
-            .unwrap_or(0.0);
+            .unwrap_or_default();
 
         self.last_measurement = Some(measurement);
 
-        self.k_d * derivative
+        self.gain * derivative
     }
 }
