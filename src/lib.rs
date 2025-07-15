@@ -10,5 +10,8 @@ pub mod park_clarke;
 pub mod pid;
 pub mod pwm;
 
-const FRAC_1_SQRT_3: f32 = 0.57735026_f32;
-const SQRT_3: f32 = 1.7320508_f32;
+#[allow(clippy::excessive_precision)]
+const FRAC_1_SQRT_3: f32 = 0.577350269189625764509148780501957456_f32;
+
+#[allow(clippy::excessive_precision)]
+const SQRT_3: f32 = 1.732050807568877293527446341505872367_f32;
